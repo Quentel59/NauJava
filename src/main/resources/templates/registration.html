@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Регистрация — Log Analyzer</title>
+    <style>
+        body { font-family: Segoe UI, Arial, sans-serif; margin: 60px auto; max-width: 420px; color: #222; }
+        h1 { font-size: 22px; }
+        form { background: #f7f7f7; border: 1px solid #ddd; padding: 18px; }
+        label { display: block; margin-bottom: 10px; font-size: 14px; }
+        input { width: 100%; padding: 6px; box-sizing: border-box; }
+        button { padding: 8px 16px; }
+        .msg { padding: 8px; margin-bottom: 12px; border: 1px solid #e0b4b0; background: #fdecea; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<h1>Регистрация пользователя</h1>
+
+<div class="msg" th:if="${message}" th:text="${message}">Ошибка</div>
+
+<form th:action="@{/registration}" method="post">
+    <label>Логин (от 3 символов):
+        <input type="text" name="username" th:value="${username}" required>
+    </label>
+    <label>Пароль (от 4 символов):
+        <input type="password" name="password" required>
+    </label>
+    <label>Email (необязательно):
+        <input type="text" name="email" th:value="${email}">
+    </label>
+    <button type="submit">Зарегистрироваться</button>
+</form>
+
+<p>Уже есть аккаунт? <a th:href="@{/login}">Войти</a></p>
+
+</body>
+</html>

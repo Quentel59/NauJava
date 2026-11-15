@@ -15,7 +15,7 @@ import ru.quentel.naujava.repository.LogFileRepository;
 import ru.quentel.naujava.service.LogFileService;
 
 /**
- * REST-доступ к транзакционной операции из лабы 4.
+ * REST-доступ к транзакционной операции.
  */
 @RestController
 @RequestMapping("/custom/log-files")

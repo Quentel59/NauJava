@@ -20,11 +20,16 @@
 
 <h1 th:text="${title}">Записи логов</h1>
 
-<p class="links">
-    <a th:href="@{/log-entries/view/list}">Показать все</a>
-    <a th:href="@{/api/log-entries}">REST: записи</a>
-    <a th:href="@{/swagger-ui/index.html}">Swagger UI</a>
-</p>
+<div class="links" style="margin-bottom:16px; padding:10px; background:#f0f0f0; border:1px solid #ddd;">
+    Пользователь: <b th:text="${currentUsername}">user</b>
+    &nbsp;|&nbsp;
+    <a th:href="@{/log-entries/view/list}">Все записи</a>
+    <a th:href="@{/api/log-entries}" style="margin-left:12px;">REST</a>
+    <a th:if="${isAdmin}" th:href="@{/swagger-ui/index.html}" style="margin-left:12px;">Swagger UI</a>
+    <form th:action="@{/logout}" method="post" style="display:inline; margin-left:16px;">
+        <button type="submit">Выйти</button>
+    </form>
+</div>
 
 <h2>Поиск кастомными методами</h2>
 <form th:action="@{/log-entries/view/search}" method="get">
