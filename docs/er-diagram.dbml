@@ -1,0 +1,62 @@
+Project log_analyzer {
+  database_type 'PostgreSQL'
+  Note 'Анализ логов и журналов событий — NauJava, практическая работа №4'
+}
+
+Table applications {
+  id bigint [pk, increment]
+  name varchar(200) [not null, unique, note 'Название стороннего приложения']
+  vendor varchar(200) [note 'Производитель']
+  description varchar(1000) [note 'Описание']
+}
+
+Table log_files {
+  id bigint [pk, increment]
+  file_name varchar(300) [not null, note 'Имя загруженного файла']
+  storage_path varchar(1000) [note 'Путь хранения']
+  size_bytes bigint [note 'Размер в байтах']
+  uploaded_at timestamp [not null, note 'Когда загружен']
+  application_id bigint [not null]
+}
+
+Table log_levels {
+  id bigint [pk, increment]
+  name varchar(20) [not null, unique, note 'TRACEDEBUGINFOWARNERRORFATAL']
+  severity int [not null, note 'Числовая важность уровня']
+  description varchar(200)
+}
+
+Table log_entries {
+  id bigint [pk, increment]
+  message varchar(4000) [not null, note 'Сообщение лога']
+  raw_line varchar(4000) [note 'Исходная строка файла']
+  line_number int [note 'Номер строки в файле']
+  event_time timestamp [not null, note 'Время события']
+  log_file_id bigint [not null]
+  level_id bigint [not null]
+}
+
+Table event_rules {
+  id bigint [pk, increment]
+  name varchar(200) [not null, note 'Название правила']
+  pattern varchar(1000) [not null, note 'Шаблон поиска']
+  group_name varchar(200) [note 'Группа событий']
+  enabled boolean [not null, note 'Включено ли правило']
+  application_id bigint [not null]
+}
+
+Table event_matches {
+  id bigint [pk, increment]
+  matched_at timestamp [not null, note 'Когда зафиксировано совпадение']
+  matched_fragment varchar(1000) [note 'Совпавший фрагмент']
+  confidence double [note 'Достоверность совпадения']
+  rule_id bigint [not null]
+  log_entry_id bigint [not null]
+}
+
+Ref log_files.application_id  applications.id
+Ref log_entries.log_file_id  log_files.id
+Ref log_entries.level_id  log_levels.id
+Ref event_rules.application_id  applications.id
+Ref event_matches.rule_id  event_rules.id
+Ref event_matches.log_entry_id  log_entries.id

@@ -6,44 +6,65 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import ru.quentel.naujava.dao.CrudRepository;
 import ru.quentel.naujava.entity.LogEntry;
+import ru.quentel.naujava.entity.LogFile;
+import ru.quentel.naujava.entity.LogLevel;
+import ru.quentel.naujava.repository.LogEntryRepository;
+import ru.quentel.naujava.repository.LogFileRepository;
+import ru.quentel.naujava.repository.LogLevelRepository;
 
-/**
- * Реализация бизнес-логики анализа логов.
- */
 @Service
-@Scope(value = BeanDefinition.SCOPE_SINGLETON)
+@Transactional(readOnly = true)
 public class LogEntryServiceImpl implements LogEntryService {
 
-    private static final Set<String> ALLOWED_LEVELS =
-            Set.of("TRACE", "DEBUG", "INFO", "WARN", "ERROR", "FATAL");
-
-    private final CrudRepository<LogEntry, Long> logEntryRepository;
+    private final LogEntryRepository logEntryRepository;
+    private final LogFileRepository logFileRepository;
+    private final LogLevelRepository logLevelRepository;
 
     @Autowired
-    public LogEntryServiceImpl(CrudRepository<LogEntry, Long> logEntryRepository) {
+    public LogEntryServiceImpl(LogEntryRepository logEntryRepository,
+                               LogFileRepository logFileRepository,
+                               LogLevelRepository logLevelRepository) {
         this.logEntryRepository = logEntryRepository;
+        this.logFileRepository = logFileRepository;
+        this.logLevelRepository = logLevelRepository;
     }
 
     @Override
-    public LogEntry addLogEntry(String level, String message) {
-        String normalizedLevel = normalizeLevel(level);
+    @Transactional
+    public LogEntry addLogEntry(Long logFileId, String levelName, String message, Integer lineNumber) {
+        if (logFileId == null) {
+            throw new IllegalArgumentException("Не указан идентификатор файла логов");
+        }
         if (message == null || message.isBlank()) {
             throw new IllegalArgumentException("Сообщение лога не может быть пустым");
         }
-        LogEntry entry = new LogEntry(null, normalizedLevel, message.trim(), LocalDateTime.now());
-        logEntryRepository.create(entry);
-        return entry;
+        if (lineNumber != null && lineNumber <= 0) {
+            throw new IllegalArgumentException("Номер строки должен быть больше нуля");
+        }
+        String normalizedLevel = normalizeLevel(levelName);
+
+        LogFile logFile = logFileRepository.findById(logFileId)
+                .orElseThrow(() -> new IllegalArgumentException("Файл логов с id=" + logFileId + " не найден"));
+        LogLevel level = logLevelRepository.findByName(normalizedLevel)
+                .orElseThrow(() -> new IllegalArgumentException("Уровень '" + normalizedLevel + "' отсутствует в справочнике"));
+
+        LogEntry entry = new LogEntry();
+        entry.setLogFile(logFile);
+        entry.setLevel(level);
+        entry.setMessage(message.trim());
+        entry.setLineNumber(lineNumber);
+        entry.setEventTime(LocalDateTime.now());
+        entry.setRawLine(entry.getEventTime() + " " + level.getName() + " " + entry.getMessage());
+
+        return logEntryRepository.save(entry);
     }
 
     @Override
@@ -51,46 +72,45 @@ public class LogEntryServiceImpl implements LogEntryService {
         if (id == null) {
             throw new IllegalArgumentException("id не может быть null");
         }
-        LogEntry entry = logEntryRepository.read(id);
-        if (entry == null) {
-            throw new IllegalArgumentException("Запись лога с id=" + id + " не найдена");
-        }
-        return entry;
+        return logEntryRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Запись лога с id=" + id + " не найдена"));
     }
 
     @Override
     public List<LogEntry> findAll() {
-        return logEntryRepository.readAll();
+        return logEntryRepository.findAll();
     }
 
     @Override
+    @Transactional
     public void updateMessage(Long id, String newMessage) {
         if (newMessage == null || newMessage.isBlank()) {
             throw new IllegalArgumentException("Новое сообщение не может быть пустым");
         }
         LogEntry entry = findById(id);
         entry.setMessage(newMessage.trim());
-        logEntryRepository.update(entry);
+        logEntryRepository.save(entry);
     }
 
     @Override
+    @Transactional
     public void deleteById(Long id) {
         findById(id);
-        logEntryRepository.delete(id);
+        logEntryRepository.deleteById(id);
     }
 
     @Override
     public Map<String, Long> countByLevel() {
-        return logEntryRepository.readAll().stream()
-                .collect(Collectors.groupingBy(LogEntry::getLevel, TreeMap::new, Collectors.counting()));
+        return logEntryRepository.findAll().stream()
+                .collect(Collectors.groupingBy(e -> e.getLevel().getName(), TreeMap::new, Collectors.counting()));
     }
 
     @Override
     public Map<String, Long> topFrequentMessages(int limit) {
         if (limit <= 0) {
-            throw new IllegalArgumentException("Размер топа должен быть больше 0");
+            throw new IllegalArgumentException("Размер топа должен быть больше нуля");
         }
-        Map<String, Long> counts = logEntryRepository.readAll().stream()
+        Map<String, Long> counts = logEntryRepository.findAll().stream()
                 .collect(Collectors.groupingBy(LogEntry::getMessage, Collectors.counting()));
 
         Comparator<Map.Entry<String, Long>> byCountDesc =
@@ -99,28 +119,19 @@ public class LogEntryServiceImpl implements LogEntryService {
         return counts.entrySet().stream()
                 .sorted(byCountDesc.thenComparing(Map.Entry::getKey))
                 .limit(limit)
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue,
-                        (a, b) -> a,
-                        LinkedHashMap::new));
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> a, LinkedHashMap::new));
     }
 
     @Override
     public Map<String, List<LogEntry>> groupByLevel() {
-        return logEntryRepository.readAll().stream()
-                .collect(Collectors.groupingBy(LogEntry::getLevel, TreeMap::new, Collectors.toList()));
+        return logEntryRepository.findAll().stream()
+                .collect(Collectors.groupingBy(e -> e.getLevel().getName(), TreeMap::new, Collectors.toList()));
     }
 
-    private String normalizeLevel(String level) {
-        if (level == null || level.isBlank()) {
+    private String normalizeLevel(String levelName) {
+        if (levelName == null || levelName.isBlank()) {
             throw new IllegalArgumentException("Уровень логирования не может быть пустым");
         }
-        String normalized = level.trim().toUpperCase(Locale.ROOT);
-        if (!ALLOWED_LEVELS.contains(normalized)) {
-            throw new IllegalArgumentException(
-                    "Неизвестный уровень '" + level + "'. Допустимые: " + ALLOWED_LEVELS);
-        }
-        return normalized;
+        return levelName.trim().toUpperCase(Locale.ROOT);
     }
 }
