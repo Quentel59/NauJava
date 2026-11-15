@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${title}">Записи логов</title>
+    <style>
+        body { font-family: Segoe UI, Arial, sans-serif; margin: 24px; color: #222; }
+        h1 { font-size: 22px; }
+        h2 { font-size: 17px; margin-top: 28px; }
+        table { border-collapse: collapse; margin-top: 8px; }
+        th, td { border: 1px solid #bbb; padding: 6px 10px; font-size: 14px; text-align: left; }
+        th { background: #f0f0f0; }
+        form { background: #f7f7f7; border: 1px solid #ddd; padding: 12px; }
+        label { margin-right: 12px; font-size: 14px; }
+        .links a { margin-right: 14px; }
+        .empty { text-align: center; color: #777; }
+    </style>
+</head>
+<body>
+
+<h1 th:text="${title}">Записи логов</h1>
+
+<p class="links">
+    <a th:href="@{/log-entries/view/list}">Показать все</a>
+    <a th:href="@{/api/log-entries}">REST: записи</a>
+    <a th:href="@{/swagger-ui/index.html}">Swagger UI</a>
+</p>
+
+<h2>Поиск кастомными методами</h2>
+<form th:action="@{/log-entries/view/search}" method="get">
+    <label>Уровень:
+        <input type="text" name="level" th:value="${level}" placeholder="ERROR" size="8">
+    </label>
+    <label>С:
+        <input type="datetime-local" name="from" th:value="${from}">
+    </label>
+    <label>По:
+        <input type="datetime-local" name="to" th:value="${to}">
+    </label>
+    <label>Приложение:
+        <input type="text" name="applicationName" th:value="${applicationName}" placeholder="nginx-proxy">
+    </label>
+    <label>
+        <input type="checkbox" name="useCriteria" value="true" th:checked="${useCriteria}"> Criteria API
+    </label>
+    <button type="submit">Найти</button>
+</form>
+
+<h2 th:text="'Записи логов (' + ${#lists.size(entries)} + ')'">Записи логов</h2>
+<table>
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Время события</th>
+        <th>Уровень</th>
+        <th>Сообщение</th>
+        <th>Строка</th>
+        <th>Файл</th>
+        <th>Приложение</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="entry : ${entries}">
+        <td th:text="${entry.id}">1</td>
+        <td th:text="${entry.eventTimeText}">2026-11-16 10:00:00</td>
+        <td th:text="${entry.level}">INFO</td>
+        <td th:text="${entry.message}">Application started</td>
+        <td th:text="${entry.lineNumber}">1</td>
+        <td th:text="${entry.fileName}">nginx-error.log</td>
+        <td th:text="${entry.applicationName}">nginx-proxy</td>
+    </tr>
+    <tr th:if="${#lists.isEmpty(entries)}">
+        <td class="empty" colspan="7">Записей не найдено</td>
+    </tr>
+    </tbody>
+</table>
+
+<h2>Статистика по уровням</h2>
+<table>
+    <thead>
+    <tr><th>Уровень</th><th>Количество</th></tr>
+    </thead>
+    <tbody>
+    <tr th:each="row : ${levelStats}">
+        <td th:text="${row.key}">INFO</td>
+        <td th:text="${row.value}">3</td>
+    </tr>
+    </tbody>
+</table>
+
+<h2>Топ-5 сообщений по частоте встречаемости</h2>
+<table>
+    <thead>
+    <tr><th>Сообщение</th><th>Частота</th></tr>
+    </thead>
+    <tbody>
+    <tr th:each="row : ${topMessages}">
+        <td th:text="${row.key}">Connection timeout</td>
+        <td th:text="${row.value}">2</td>
+    </tr>
+    </tbody>
+</table>
+
+</body>
+</html>

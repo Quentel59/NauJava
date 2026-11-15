@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Ошибка</title>
+    <style>
+        body { font-family: Segoe UI, Arial, sans-serif; margin: 40px; }
+        .code { font-size: 40px; color: #c0392b; }
+    </style>
+</head>
+<body>
+<div class="code" th:text="${status} ?: 'Ошибка'">500</div>
+<p th:text="${error}">Internal Server Error</p>
+<p th:text="${message}">Описание ошибки</p>
+<p><a th:href="@{/log-entries/view/list}">Вернуться к списку записей логов</a></p>
+</body>
+</html>

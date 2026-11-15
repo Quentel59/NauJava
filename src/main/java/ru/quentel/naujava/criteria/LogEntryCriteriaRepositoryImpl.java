@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Fetch;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
@@ -36,6 +37,11 @@ public class LogEntryCriteriaRepositoryImpl implements LogEntryCriteriaRepositor
         CriteriaQuery<LogEntry> cq = cb.createQuery(LogEntry.class);
         Root<LogEntry> entry = cq.from(LogEntry.class);
 
+        // инициализация связей одним запросом
+        entry.fetch("level", JoinType.INNER);
+        Fetch<LogEntry, LogFile> fileFetch = entry.fetch("logFile", JoinType.INNER);
+        fileFetch.fetch("application", JoinType.INNER);
+
         Join<LogEntry, LogLevel> level = entry.join("level", JoinType.INNER);
 
         Predicate levelPredicate = cb.equal(level.get("name"), levelName);
@@ -53,6 +59,10 @@ public class LogEntryCriteriaRepositoryImpl implements LogEntryCriteriaRepositor
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<LogEntry> cq = cb.createQuery(LogEntry.class);
         Root<LogEntry> entry = cq.from(LogEntry.class);
+
+        entry.fetch("level", JoinType.INNER);
+        Fetch<LogEntry, LogFile> fileFetch = entry.fetch("logFile", JoinType.INNER);
+        fileFetch.fetch("application", JoinType.INNER);
 
         Join<LogEntry, LogFile> file = entry.join("logFile", JoinType.INNER);
         Join<LogFile, Application> application = file.join("application", JoinType.INNER);
