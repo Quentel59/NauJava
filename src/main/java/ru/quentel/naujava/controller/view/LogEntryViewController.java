@@ -1,5 +1,8 @@
 package ru.quentel.naujava.controller.view;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.ModelAttribute;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
@@ -101,5 +104,13 @@ public class LogEntryViewController {
         model.addAttribute("to", to == null ? "" : to.toString());
         model.addAttribute("applicationName", applicationName == null ? "" : applicationName);
         model.addAttribute("useCriteria", useCriteria);
+    }
+    @ModelAttribute
+    public void addCurrentUser(Model model, Authentication authentication) {
+        if (authentication != null) {
+            model.addAttribute("currentUsername", authentication.getName());
+            model.addAttribute("isAdmin", authentication.getAuthorities().stream()
+                    .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority())));
+        }
     }
 }

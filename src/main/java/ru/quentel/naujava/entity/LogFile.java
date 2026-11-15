@@ -47,6 +47,10 @@ public class LogFile {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "application_id", nullable = false)
     private Application application;
+    /** Пользователь, загрузивший файл (необязательное поле). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "uploaded_by_id")
+    private AppUser uploadedBy;
 
     @OneToMany(mappedBy = "logFile")
     private List<LogEntry> entries = new ArrayList<>();
@@ -122,4 +126,13 @@ public class LogFile {
     public String toString() {
         return "LogFile{id=" + id + ", fileName='" + fileName + "', sizeBytes=" + sizeBytes + "}";
     }
+    public AppUser getUploadedBy() {
+        return uploadedBy;
+    }
+
+    public void setUploadedBy(AppUser uploadedBy) {
+        this.uploadedBy = uploadedBy;
+    }
+
 }
+

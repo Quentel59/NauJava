@@ -2,6 +2,16 @@ Project log_analyzer {
   database_type 'PostgreSQL'
   Note 'Анализ логов и журналов событий — NauJava, практическая работа №4'
 }
+Table app_users {
+  id bigint [pk, increment]
+  username varchar(100) [not null, unique]
+  password varchar(200) [not null, note: 'BCrypt-хеш']
+  email varchar(200)
+  role varchar(20) [not null, note: 'ADMIN / USER']
+  created_at timestamp [not null]
+}
+
+Ref: log_files.uploaded_by_id > app_users.id
 
 Table applications {
   id bigint [pk, increment]
@@ -12,6 +22,7 @@ Table applications {
 
 Table log_files {
   id bigint [pk, increment]
+  uploaded_by_id bigint
   file_name varchar(300) [not null, note 'Имя загруженного файла']
   storage_path varchar(1000) [note 'Путь хранения']
   size_bytes bigint [note 'Размер в байтах']
