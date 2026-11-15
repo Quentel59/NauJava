@@ -10,8 +10,8 @@ import ru.quentel.naujava.entity.LogEntry;
  */
 public interface LogEntryService {
 
-    /** Добавляет запись лога, id и время проставляются автоматически. */
-    LogEntry addLogEntry(String level, String message);
+    /** Добавляет запись лога в указанный файл с указанным уровнем. */
+    LogEntry addLogEntry(Long logFileId, String levelName, String message, Integer lineNumber);
 
     /** Ищет запись по идентификатору. */
     LogEntry findById(Long id);
@@ -19,7 +19,7 @@ public interface LogEntryService {
     /** Возвращает все записи. */
     List<LogEntry> findAll();
 
-    /** Меняет текст сообщения у записи. */
+    /** Меняет текст сообщения. */
     void updateMessage(Long id, String newMessage);
 
     /** Удаляет запись по идентификатору. */
@@ -28,7 +28,7 @@ public interface LogEntryService {
     /** Статистика: количество записей по уровням логирования. */
     Map<String, Long> countByLevel();
 
-    /** Топ-N сообщений по частоте встречаемости (по убыванию). */
+    /** Топ-N сообщений по частоте встречаемости. */
     Map<String, Long> topFrequentMessages(int limit);
 
     /** Группировка записей по уровню логирования. */

@@ -1,36 +1,59 @@
 package ru.quentel.naujava.entity;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
 /**
- * Сущность предметной области.
+ * Одна запись (строка) лога. Не существует без файла лога и уровня логирования.
  */
+@Entity
+@Table(name = "log_entries")
 public class LogEntry {
 
-    private static final DateTimeFormatter FORMATTER =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
-    /** Уникальный идентификатор записи. */
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** Уровень логирования: TRACE, DEBUG, INFO, WARN, ERROR, FATAL. */
-    private String level;
-
-    /** Текст сообщения лога. */
+    /** Текст сообщения. */
+    @Column(name = "message", nullable = false, length = 4000)
     private String message;
 
+    /** Исходная строка файла лога. */
+    @Column(name = "raw_line", length = 4000)
+    private String rawLine;
+
+    /** Номер строки в файле. */
+    @Column(name = "line_number")
+    private Integer lineNumber;
+
     /** Время события. */
-    private LocalDateTime timestamp;
+    @Column(name = "event_time", nullable = false)
+    private LocalDateTime eventTime;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "log_file_id", nullable = false)
+    private LogFile logFile;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "level_id", nullable = false)
+    private LogLevel level;
+
+    @OneToMany(mappedBy = "logEntry")
+    private List<EventMatch> matches = new ArrayList<>();
 
     public LogEntry() {
-    }
-
-    public LogEntry(Long id, String level, String message, LocalDateTime timestamp) {
-        this.id = id;
-        this.level = level;
-        this.message = message;
-        this.timestamp = timestamp;
     }
 
     public Long getId() {
@@ -41,14 +64,6 @@ public class LogEntry {
         this.id = id;
     }
 
-    public String getLevel() {
-        return level;
-    }
-
-    public void setLevel(String level) {
-        this.level = level;
-    }
-
     public String getMessage() {
         return message;
     }
@@ -57,20 +72,56 @@ public class LogEntry {
         this.message = message;
     }
 
-    public LocalDateTime getTimestamp() {
-        return timestamp;
+    public String getRawLine() {
+        return rawLine;
     }
 
-    public void setTimestamp(LocalDateTime timestamp) {
-        this.timestamp = timestamp;
+    public void setRawLine(String rawLine) {
+        this.rawLine = rawLine;
+    }
+
+    public Integer getLineNumber() {
+        return lineNumber;
+    }
+
+    public void setLineNumber(Integer lineNumber) {
+        this.lineNumber = lineNumber;
+    }
+
+    public LocalDateTime getEventTime() {
+        return eventTime;
+    }
+
+    public void setEventTime(LocalDateTime eventTime) {
+        this.eventTime = eventTime;
+    }
+
+    public LogFile getLogFile() {
+        return logFile;
+    }
+
+    public void setLogFile(LogFile logFile) {
+        this.logFile = logFile;
+    }
+
+    public LogLevel getLevel() {
+        return level;
+    }
+
+    public void setLevel(LogLevel level) {
+        this.level = level;
+    }
+
+    public List<EventMatch> getMatches() {
+        return matches;
+    }
+
+    public void setMatches(List<EventMatch> matches) {
+        this.matches = matches;
     }
 
     @Override
     public String toString() {
-        return String.format("[%d] %s %-5s %s",
-                id,
-                timestamp == null ? "-" : timestamp.format(FORMATTER),
-                level,
-                message);
+        return "LogEntry{id=" + id + ", eventTime=" + eventTime + ", message='" + message + "'}";
     }
 }
