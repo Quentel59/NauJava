@@ -56,6 +56,15 @@ Table event_rules {
   application_id bigint [not null]
 }
 
+Table reports {
+  id bigint [pk, increment]
+  status varchar(20) [not null, note: 'CREATED / COMPLETED / ERROR']
+  content text [note: 'HTML-содержимое отчёта']
+  created_at timestamp [not null]
+  error_message varchar(2000)
+  duration_ms bigint
+}
+
 Table event_matches {
   id bigint [pk, increment]
   matched_at timestamp [not null, note 'Когда зафиксировано совпадение']
